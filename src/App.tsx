@@ -5,18 +5,40 @@ function App() {
     <div className="flex min-h-svh items-center justify-center py-16">
       <div className="flex flex-col items-start gap-8 max-w-3xl w-full px-8">
 
+        {/* ===== Font Family ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Font Family</h2>
+
+          <div className="space-y-3 border-b border-border pb-4">
+            <p className="text-xs text-muted-foreground">font-primary — Gowun Dodum (고운 도둠)</p>
+            <p className="font-primary text-2xl">
+              사주정설 — 타고난 사주 팔자를 분석하여 운명의 흐름을 읽어드립니다.
+            </p>
+            <p className="text-xs text-muted-foreground">font-secondary — Nanum Pen Script (나눔손편지)</p>
+            <p className="font-secondary text-2xl">
+              사주정설 — 타고난 사주 팔자를 분석하여 운명의 흐름을 읽어드립니다.
+            </p>
+          </div>
+        </section>
+
         {/* ===== Typography ===== */}
         <section className="w-full space-y-4">
-          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Typography</h2>
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Typography Scale</h2>
 
           {/* Display */}
           <div className="space-y-2 border-b border-border pb-4">
-            <p className="text-xs text-muted-foreground">Display 1 — 50px / 70px</p>
-            <p style={{ fontSize: 'var(--display-1-size)', lineHeight: 'var(--display-1-line-height)', fontWeight: 'var(--display-1-weight)' }}>
+            <p className="text-xs text-muted-foreground">Display 1 — 50px / 70px (Primary)</p>
+            <p className="font-primary" style={{ fontSize: 'var(--display-1-size)', lineHeight: 'var(--display-1-line-height)', fontWeight: 'var(--display-1-weight)' }}>
+              사주정설 Display 1
+            </p>
+            <p className="font-secondary" style={{ fontSize: 'var(--display-1-size)', lineHeight: 'var(--display-1-line-height)', fontWeight: 'var(--display-1-weight)' }}>
               사주정설 Display 1
             </p>
             <p className="text-xs text-muted-foreground">Display 2 — 40px / 56px</p>
-            <p style={{ fontSize: 'var(--display-2-size)', lineHeight: 'var(--display-2-line-height)', fontWeight: 'var(--display-2-weight)' }}>
+            <p className="font-primary" style={{ fontSize: 'var(--display-2-size)', lineHeight: 'var(--display-2-line-height)', fontWeight: 'var(--display-2-weight)' }}>
+              사주정설 Display 2
+            </p>
+            <p className="font-secondary" style={{ fontSize: 'var(--display-2-size)', lineHeight: 'var(--display-2-line-height)', fontWeight: 'var(--display-2-weight)' }}>
               사주정설 Display 2
             </p>
           </div>

@@ -83,7 +83,7 @@
 
   /* Font Family: e.g. font-primary, font-secondary */
   --font-primary: 'Gowun Dodum', sans-serif;
-  --font-secondary: 'Nanum SonpyeonJice', cursive;
+  --font-secondary: 'Nanum Pen Script', cursive;
 }
 
 :root {
@@ -129,7 +129,7 @@
      Font Family
      ========================= */
   --font-primary: 'Gowun Dodum', sans-serif;
-  --font-secondary: 'Nanum SonpyeonJice', cursive;
+  --font-secondary: 'Nanum Pen Script', cursive;
 
   /* =========================
      Font Weights
