@@ -1,6 +1,7 @@
 import { memo } from "react";
 import {
   Document,
+  Image,
   Page,
   Text,
   View,
@@ -9,12 +10,20 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
-// 한글: 고운돋움 로컬 (WOFF2 — 444KB, WOFF 대비 1/3 크기)
+// 한글: 고운돋움 로컬
 Font.register({
   family: "GowunDodum",
   src: "/fonts/GowunDodum-Regular.woff",
   fontWeight: 400,
 });
+
+/* ── 배경 이미지 경로 (PNG — react-pdf는 AVIF 미지원) ── */
+const COVER_BG = "/images/cover_bg_img 1.png";
+const BODY_BG = "/images/body_bg_img 1.png";
+
+/* ── A4 크기 (pt) ─────────────────────────────────── */
+const A4_WIDTH = 595.28;
+const A4_HEIGHT = 841.89;
 
 /* ── 챕터 데이터 ───────────────────────────────── */
 const chapters = [
@@ -48,10 +57,22 @@ const chapters = [
 /* ── 스타일 ─────────────────────────────────────── */
 const styles = StyleSheet.create({
   page: {
-    flexDirection: "column",
-    backgroundColor: "#fff",
-    padding: 40,
     fontFamily: "GowunDodum",
+    position: "relative",
+  },
+  bgLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  bgImage: {
+    width: "100%",
+    height: "100%",
+  },
+  content: {
+    padding: 40,
   },
   tocTitle: {
     fontSize: 26,
@@ -64,7 +85,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "rgba(255,255,255,0.6)",
     borderRadius: 4,
     color: "#1a5276",
     textDecoration: "none",
@@ -102,7 +123,7 @@ function PageFooter() {
     <Text
       style={styles.footer}
       fixed
-      render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`}
+      render={({ pageNumber }) => `-${pageNumber}p-`}
     />
   );
 }
@@ -116,23 +137,32 @@ function SampleDocumentInner() {
       subject="@react-pdf/renderer 공식 가이드"
       creator="react-pdf"
     >
-      {/* ▸ 목차 페이지 */}
+      {/* ▸ 목차 페이지 (커버 배경) */}
       <Page size="A4" style={styles.page} bookmark="목차">
-        <Text style={styles.tocTitle}>목차</Text>
-        {chapters.map((ch, i) => (
-          <Link key={ch.id} src={`#${ch.id}`} style={styles.tocItem}>
-            {`${i + 1}.  ${ch.title}`}
-          </Link>
-        ))}
-        <PageFooter />
+        <View style={styles.bgLayer} fixed>
+          <Image src={COVER_BG} style={styles.bgImage} />
+        </View>
+        <View style={styles.content}>
+          <Text style={styles.tocTitle}>목차</Text>
+          {chapters.map((ch, i) => (
+            <Link key={ch.id} src={`#${ch.id}`} style={styles.tocItem}>
+              {`${i + 1}.  ${ch.title}`}
+            </Link>
+          ))}
+        </View>
       </Page>
 
-      {/* ▸ 본문 페이지 */}
+      {/* ▸ 본문 페이지 (본문 배경) */}
       {chapters.map((ch) => (
         <Page key={ch.id} size="A4" style={styles.page} bookmark={ch.title}>
-          <View id={ch.id} style={styles.section}>
-            <Text style={styles.chapterTitle}>{ch.title}</Text>
-            <Text style={styles.text}>{ch.body}</Text>
+          <View style={styles.bgLayer} fixed>
+            <Image src={BODY_BG} style={styles.bgImage} />
+          </View>
+          <View style={styles.content}>
+            <View id={ch.id} style={styles.section}>
+              <Text style={styles.chapterTitle}>{ch.title}</Text>
+              <Text style={styles.text}>{ch.body}</Text>
+            </View>
           </View>
           <PageFooter />
         </Page>
