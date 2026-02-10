@@ -3,13 +3,48 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /* =========================================================================
-   WheelColumn — iOS 스타일 순환 스크롤 휠 단일 컬럼
+   WheelColumn — iOS 스타일 순환 스크롤 휠 (성능 최적화)
+   - visualIndex를 ref로 관리, DOM 직접 조작으로 리렌더 최소화
+   - WheelItem을 React.memo로 분리하여 불필요한 리렌더 방지
    ========================================================================= */
 
 const ITEM_HEIGHT = 40;
 const VISIBLE_COUNT = 5;
 const HALF = Math.floor(VISIBLE_COUNT / 2);
-const COPIES = 3; // 아이템 리스트를 3번 복제 (순환용)
+const COPIES = 3;
+
+/* ----- WheelItem (memo) ----- */
+
+interface WheelItemProps {
+  label: string;
+  absIndex: number;
+  onClick: (absIndex: number) => void;
+}
+
+const WheelItem = React.memo(function WheelItem({
+  label,
+  absIndex,
+  onClick,
+}: WheelItemProps) {
+  return (
+    <div
+      data-wheel-index={absIndex}
+      className="wheel-item flex items-center justify-center font-primary select-none"
+      style={{
+        height: ITEM_HEIGHT,
+        opacity: 0.2,
+        transform: "scale(0.85)",
+        fontSize: "15px",
+        fontWeight: 400,
+      }}
+      onClick={() => onClick(absIndex)}
+    >
+      {label}
+    </div>
+  );
+});
+
+/* ----- WheelColumn ----- */
 
 interface WheelColumnProps {
   items: { value: number; label: string }[];
@@ -17,7 +52,11 @@ interface WheelColumnProps {
   onChange: (value: number) => void;
 }
 
-function WheelColumn({ items, value, onChange }: WheelColumnProps) {
+const WheelColumn = React.memo(function WheelColumn({
+  items,
+  value,
+  onChange,
+}: WheelColumnProps) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const isUserScrolling = React.useRef(false);
   const scrollTimer = React.useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -33,13 +72,16 @@ function WheelColumn({ items, value, onChange }: WheelColumnProps) {
   const momentumRaf = React.useRef<number>(0);
 
   const count = items.length;
-  // 중간 세트의 시작 오프셋 (아이템 기준)
-  const midOffset = count; // 두 번째 세트의 시작 index
+  const midOffset = count; // 두 번째 세트 시작
 
-  // 실시간 시각 인덱스 (원본 items 기준 0~count-1)
-  const [visualIndex, setVisualIndex] = React.useState(() =>
-    items.findIndex((item) => item.value === value)
+  // ref 기반 visualIndex (리렌더 없이 DOM 직접 업데이트)
+  const visualIndexRef = React.useRef(
+    Math.max(
+      0,
+      items.findIndex((item) => item.value === value)
+    )
   );
+  const prevVisualRef = React.useRef(-1);
 
   // 전체 아이템에서의 절대 인덱스 → 원본 인덱스
   const toLogical = React.useCallback(
@@ -47,15 +89,44 @@ function WheelColumn({ items, value, onChange }: WheelColumnProps) {
     [count]
   );
 
-  // 스크롤 위치에서 절대 인덱스 → 원본 인덱스 계산, visualIndex 업데이트
+  // DOM 직접 스타일 적용 (리렌더 없음)
+  const applyVisualStyles = React.useCallback(
+    (force = false) => {
+      const el = containerRef.current;
+      if (!el) return;
+      const vi = visualIndexRef.current;
+      if (!force && vi === prevVisualRef.current) return;
+      prevVisualRef.current = vi;
+
+      const children = el.querySelectorAll<HTMLElement>(".wheel-item");
+      children.forEach((child) => {
+        const absIndex = Number(child.dataset.wheelIndex);
+        const logical = toLogical(absIndex);
+        const distance = Math.abs(logical - vi);
+        const circDist = Math.min(distance, count - distance);
+        const isCenter = circDist === 0;
+
+        child.style.opacity = isCenter ? "1" : circDist === 1 ? "0.4" : "0.2";
+        child.style.transform = `scale(${
+          isCenter ? 1 : circDist === 1 ? 0.9 : 0.85
+        })`;
+        child.style.fontSize = isCenter ? "18px" : "15px";
+        child.style.fontWeight = isCenter ? "900" : "400";
+      });
+    },
+    [count, toLogical]
+  );
+
+  // 스크롤 위치에서 visualIndex 갱신 + DOM 스타일 적용
   const updateVisualIndex = React.useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
     const absIdx = Math.round(el.scrollTop / ITEM_HEIGHT);
-    setVisualIndex(toLogical(absIdx));
-  }, [toLogical]);
+    visualIndexRef.current = toLogical(absIdx);
+    applyVisualStyles();
+  }, [toLogical, applyVisualStyles]);
 
-  // 값을 기반으로 중간 세트의 해당 위치로 스크롤 (점프)
+  // 값을 기반으로 중간 세트의 해당 위치로 스크롤
   const scrollToValue = React.useCallback(
     (val: number, smooth = false) => {
       const el = containerRef.current;
@@ -68,9 +139,10 @@ function WheelColumn({ items, value, onChange }: WheelColumnProps) {
       } else {
         el.scrollTop = target;
       }
-      setVisualIndex(idx);
+      visualIndexRef.current = idx;
+      applyVisualStyles();
     },
-    [items, midOffset]
+    [items, midOffset, applyVisualStyles]
   );
 
   // 경계에 가까워지면 중간 세트로 무소음 리셋
@@ -79,56 +151,66 @@ function WheelColumn({ items, value, onChange }: WheelColumnProps) {
     if (!el) return;
     const absIdx = Math.round(el.scrollTop / ITEM_HEIGHT);
     const logical = toLogical(absIdx);
-    // 첫 번째 세트나 세 번째 세트에 있으면 중간으로 이동
     if (absIdx < count * 0.5 || absIdx >= count * 2.5) {
       isResetting.current = true;
       el.scrollTop = (midOffset + logical) * ITEM_HEIGHT;
-      // 다음 프레임에서 플래그 해제
       requestAnimationFrame(() => {
         isResetting.current = false;
       });
     }
   }, [count, midOffset, toLogical]);
 
-  // 초기 마운트 시 중간 세트로 스크롤
-  React.useEffect(() => {
+  // 초기 마운트 — 페인트 전에 위치 + 스타일 적용
+  React.useLayoutEffect(() => {
     scrollToValue(value);
+    applyVisualStyles(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 외부에서 value가 변경되면 위치 이동
+  // 외부 value 변경
   React.useEffect(() => {
     if (isUserScrolling.current) return;
     scrollToValue(value);
   }, [value, scrollToValue]);
 
-  // 스냅: 가장 가까운 아이템으로 정렬 + 값 업데이트 + 중간 리셋
+  // items 변경 시 (예: 월 변경 → 일수 변경) 페인트 전에 스크롤 + 스타일 동기 적용
+  const prevItemsLenRef = React.useRef(count);
+  React.useLayoutEffect(() => {
+    if (prevItemsLenRef.current !== count) {
+      prevItemsLenRef.current = count;
+      scrollToValue(value);
+      applyVisualStyles(true);
+    }
+  }, [count, value, scrollToValue, applyVisualStyles]);
+
+  // 스냅
   const snapToNearest = React.useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
     const absIdx = Math.round(el.scrollTop / ITEM_HEIGHT);
     const logical = toLogical(absIdx);
     el.scrollTo({ top: absIdx * ITEM_HEIGHT, behavior: "smooth" });
-    setVisualIndex(logical);
+    visualIndexRef.current = logical;
+    applyVisualStyles();
     onChange(items[logical].value);
     setTimeout(() => {
       resetToMiddle();
       isUserScrolling.current = false;
     }, 200);
-  }, [items, onChange, toLogical, resetToMiddle]);
+  }, [items, onChange, toLogical, resetToMiddle, applyVisualStyles]);
 
-  // 네이티브 스크롤 (마우스 휠 / 트랙패드)
-  const handleScroll = () => {
+  // 네이티브 스크롤
+  const handleScroll = React.useCallback(() => {
     if (isResetting.current) return;
     updateVisualIndex();
     if (isDragging.current) return;
     isUserScrolling.current = true;
     if (scrollTimer.current) clearTimeout(scrollTimer.current);
     scrollTimer.current = setTimeout(snapToNearest, 80);
-  };
+  }, [updateVisualIndex, snapToNearest]);
 
   // --- 포인터 드래그 ---
-  const handlePointerDown = (e: React.PointerEvent) => {
+  const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
     const el = containerRef.current;
     if (!el) return;
     cancelAnimationFrame(momentumRaf.current);
@@ -140,58 +222,90 @@ function WheelColumn({ items, value, onChange }: WheelColumnProps) {
     lastMoveTime.current = Date.now();
     velocity.current = 0;
     el.setPointerCapture(e.pointerId);
-  };
-
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging.current) return;
-    const el = containerRef.current;
-    if (!el) return;
-    const dy = dragStartY.current - e.clientY;
-    el.scrollTop = dragStartScroll.current + dy;
-    updateVisualIndex();
-
-    const now = Date.now();
-    const dt = now - lastMoveTime.current;
-    if (dt > 0) {
-      velocity.current = (lastMoveY.current - e.clientY) / dt;
-    }
-    lastMoveY.current = e.clientY;
-    lastMoveTime.current = now;
-  };
-
-  const handlePointerUp = (e: React.PointerEvent) => {
-    if (!isDragging.current) return;
-    const el = containerRef.current;
-    if (!el) return;
-    isDragging.current = false;
-    el.releasePointerCapture(e.pointerId);
-
-    const v = velocity.current;
-    if (Math.abs(v) > 0.3) {
-      let currentVelocity = v * 12;
-      const friction = 0.94;
-      const animate = () => {
-        if (Math.abs(currentVelocity) < 0.5) {
-          snapToNearest();
-          return;
-        }
-        el.scrollTop += currentVelocity;
-        currentVelocity *= friction;
-        updateVisualIndex();
-        momentumRaf.current = requestAnimationFrame(animate);
-      };
-      momentumRaf.current = requestAnimationFrame(animate);
-    } else {
-      snapToNearest();
-    }
-  };
-
-  // cleanup
-  React.useEffect(() => {
-    return () => cancelAnimationFrame(momentumRaf.current);
   }, []);
 
-  // 3배 복제 아이템 렌더링
+  const handlePointerMove = React.useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current) return;
+      const el = containerRef.current;
+      if (!el) return;
+      const dy = dragStartY.current - e.clientY;
+      el.scrollTop = dragStartScroll.current + dy;
+      updateVisualIndex();
+
+      const now = Date.now();
+      const dt = now - lastMoveTime.current;
+      if (dt > 0) {
+        velocity.current = (lastMoveY.current - e.clientY) / dt;
+      }
+      lastMoveY.current = e.clientY;
+      lastMoveTime.current = now;
+    },
+    [updateVisualIndex]
+  );
+
+  const handlePointerUp = React.useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current) return;
+      const el = containerRef.current;
+      if (!el) return;
+      isDragging.current = false;
+      el.releasePointerCapture(e.pointerId);
+
+      const v = velocity.current;
+      if (Math.abs(v) > 0.3) {
+        let currentVelocity = v * 12;
+        const friction = 0.94;
+        const animate = () => {
+          if (Math.abs(currentVelocity) < 0.5) {
+            snapToNearest();
+            return;
+          }
+          el.scrollTop += currentVelocity;
+          currentVelocity *= friction;
+          updateVisualIndex();
+          momentumRaf.current = requestAnimationFrame(animate);
+        };
+        momentumRaf.current = requestAnimationFrame(animate);
+      } else {
+        snapToNearest();
+      }
+    },
+    [snapToNearest, updateVisualIndex]
+  );
+
+  // 아이템 클릭 핸들러 (안정적 참조)
+  const handleItemClick = React.useCallback(
+    (absIndex: number) => {
+      if (Math.abs(velocity.current) > 0.1) return;
+      const el = containerRef.current;
+      if (!el) return;
+      const logical = toLogical(absIndex);
+      el.scrollTo({ top: absIndex * ITEM_HEIGHT, behavior: "smooth" });
+      visualIndexRef.current = logical;
+      applyVisualStyles();
+      onChange(items[logical].value);
+      setTimeout(resetToMiddle, 250);
+    },
+    [items, onChange, toLogical, resetToMiddle, applyVisualStyles]
+  );
+
+  // 마우스 휠/트랙패드 민감도 증폭 (×2.5)
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      el.scrollTop += e.deltaY * 2.5;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      cancelAnimationFrame(momentumRaf.current);
+    };
+  }, []);
+
+  // 3배 복제 아이템 (memo)
   const allItems = React.useMemo(() => {
     const arr: { value: number; label: string; logicalIndex: number }[] = [];
     for (let c = 0; c < COPIES; c++) {
@@ -211,69 +325,33 @@ function WheelColumn({ items, value, onChange }: WheelColumnProps) {
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       className="relative flex-1 overflow-y-auto scrollbar-none cursor-grab active:cursor-grabbing touch-none"
-      style={{
-        height: ITEM_HEIGHT * VISIBLE_COUNT,
-      }}
+      style={{ height: ITEM_HEIGHT * VISIBLE_COUNT }}
     >
-      {/* 상단 padding */}
       <div style={{ height: ITEM_HEIGHT * HALF }} />
 
-      {allItems.map((item, absIndex) => {
-        const distance = Math.abs(item.logicalIndex - visualIndex);
-        // 순환 거리 (예: 0과 11의 거리 = 1)
-        const circDist = Math.min(distance, count - distance);
-        const isCenter = circDist === 0;
-        const opacity = isCenter ? 1 : circDist === 1 ? 0.4 : 0.2;
-        const scale = isCenter ? 1 : circDist === 1 ? 0.9 : 0.85;
+      {allItems.map((item, absIndex) => (
+        <WheelItem
+          key={absIndex}
+          label={item.label}
+          absIndex={absIndex}
+          onClick={handleItemClick}
+        />
+      ))}
 
-        return (
-          <div
-            key={absIndex}
-            className="flex items-center justify-center font-primary select-none"
-            style={{
-              height: ITEM_HEIGHT,
-              opacity,
-              transform: `scale(${scale})`,
-              fontSize: isCenter ? "18px" : "15px",
-              fontWeight: isCenter ? 900 : 400,
-              transition:
-                "opacity 0.1s, transform 0.1s, font-size 0.1s, font-weight 0.1s",
-            }}
-            onClick={() => {
-              if (Math.abs(velocity.current) > 0.1) return;
-              const el = containerRef.current;
-              if (!el) return;
-              el.scrollTo({ top: absIndex * ITEM_HEIGHT, behavior: "smooth" });
-              setVisualIndex(item.logicalIndex);
-              onChange(item.value);
-              setTimeout(resetToMiddle, 250);
-            }}
-          >
-            {item.label}
-          </div>
-        );
-      })}
-
-      {/* 하단 padding */}
       <div style={{ height: ITEM_HEIGHT * HALF }} />
     </div>
   );
-}
+});
 
 /* =========================================================================
    DateWheelPicker — 년 / 월 / 일 3컬럼 휠 피커
    ========================================================================= */
 
 interface DateWheelPickerProps {
-  /** 현재 선택된 날짜 */
   value?: { year: number; month: number; day: number };
-  /** 날짜 변경 콜백 */
   onChange?: (date: { year: number; month: number; day: number }) => void;
-  /** 닫기 콜백 */
   onClose?: () => void;
-  /** 선택 완료 콜백 */
   onConfirm?: (date: { year: number; month: number; day: number }) => void;
-  /** 년도 범위 (기본: 1920~2030) */
   yearRange?: [number, number];
   className?: string;
 }
@@ -282,7 +360,7 @@ function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
-function DateWheelPicker({
+const DateWheelPicker = React.memo(function DateWheelPicker({
   value,
   onChange,
   onClose,
@@ -292,12 +370,9 @@ function DateWheelPicker({
 }: DateWheelPickerProps) {
   const now = new Date();
   const [year, setYear] = React.useState(value?.year ?? now.getFullYear());
-  const [month, setMonth] = React.useState(
-    value?.month ?? now.getMonth() + 1
-  );
+  const [month, setMonth] = React.useState(value?.month ?? now.getMonth() + 1);
   const [day, setDay] = React.useState(value?.day ?? now.getDate());
 
-  // 년도 목록
   const years = React.useMemo(() => {
     const arr: { value: number; label: string }[] = [];
     for (let y = yearRange[0]; y <= yearRange[1]; y++) {
@@ -306,32 +381,45 @@ function DateWheelPicker({
     return arr;
   }, [yearRange]);
 
-  // 월 목록
-  const months = React.useMemo(() => {
-    return Array.from({ length: 12 }, (_, i) => ({
-      value: i + 1,
-      label: String(i + 1),
-    }));
-  }, []);
+  const months = React.useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, i) => ({
+        value: i + 1,
+        label: String(i + 1),
+      })),
+    []
+  );
 
-  // 일 목록 (년/월에 따라 동적)
   const maxDay = getDaysInMonth(year, month);
-  const days = React.useMemo(() => {
-    return Array.from({ length: maxDay }, (_, i) => ({
-      value: i + 1,
-      label: String(i + 1),
-    }));
-  }, [maxDay]);
+  const days = React.useMemo(
+    () =>
+      Array.from({ length: maxDay }, (_, i) => ({
+        value: i + 1,
+        label: String(i + 1),
+      })),
+    [maxDay]
+  );
 
-  // 월 변경 시 day가 범위 초과하면 보정
   React.useEffect(() => {
     if (day > maxDay) setDay(maxDay);
   }, [maxDay, day]);
 
-  // 외부로 변경 알림
+  // onChange를 안정화 — 매 렌더마다 새 ref로 최신 함수 유지
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+
   React.useEffect(() => {
-    onChange?.({ year, month, day });
-  }, [year, month, day, onChange]);
+    onChangeRef.current?.({ year, month, day });
+  }, [year, month, day]);
+
+  // 자식에게 전달할 콜백 안정화
+  const handleYearChange = React.useCallback((v: number) => setYear(v), []);
+  const handleMonthChange = React.useCallback((v: number) => setMonth(v), []);
+  const handleDayChange = React.useCallback((v: number) => setDay(v), []);
+
+  const handleConfirm = React.useCallback(() => {
+    onConfirm?.({ year, month, day });
+  }, [onConfirm, year, month, day]);
 
   return (
     <div
@@ -340,17 +428,12 @@ function DateWheelPicker({
         className
       )}
     >
-      {/* 휠 영역 */}
       <div className="relative flex">
         {/* 중앙 하이라이트 바 */}
         <div
           className="pointer-events-none absolute inset-x-0 z-10 rounded-lg bg-muted/60"
-          style={{
-            top: ITEM_HEIGHT * HALF,
-            height: ITEM_HEIGHT,
-          }}
+          style={{ top: ITEM_HEIGHT * HALF, height: ITEM_HEIGHT }}
         />
-
         {/* 상단 그라데이션 */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 z-20"
@@ -360,7 +443,6 @@ function DateWheelPicker({
               "linear-gradient(to bottom, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%)",
           }}
         />
-
         {/* 하단 그라데이션 */}
         <div
           className="pointer-events-none absolute inset-x-0 bottom-0 z-20"
@@ -371,30 +453,25 @@ function DateWheelPicker({
           }}
         />
 
-        <WheelColumn items={years} value={year} onChange={setYear} />
-        <WheelColumn items={months} value={month} onChange={setMonth} />
-        <WheelColumn items={days} value={day} onChange={setDay} />
+        <WheelColumn items={years} value={year} onChange={handleYearChange} />
+        <WheelColumn
+          items={months}
+          value={month}
+          onChange={handleMonthChange}
+        />
+        <WheelColumn items={days} value={day} onChange={handleDayChange} />
       </div>
 
-      {/* 하단 버튼 */}
-      <div className="flex gap-2 border-t border-border p-3">
-        <Button
-          variant="outline"
-          className="flex-1"
-          onClick={() => onClose?.()}
-        >
+      <div className="flex gap-2 p-3">
+        <Button variant="outline" className="flex-1" onClick={onClose}>
           닫기
         </Button>
-        <Button
-          variant="cta"
-          className="flex-1"
-          onClick={() => onConfirm?.({ year, month, day })}
-        >
+        <Button variant="cta" className="flex-1" onClick={handleConfirm}>
           선택 완료
         </Button>
       </div>
     </div>
   );
-}
+});
 
 export { DateWheelPicker, WheelColumn };

@@ -249,4 +249,8 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+  .wheel-item {
+    transition: opacity 0.1s, transform 0.1s, font-size 0.1s, font-weight 0.1s;
+    will-change: opacity, transform;
+  }
 }
