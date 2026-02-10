@@ -3,11 +3,32 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { WheelColumn, ITEM_HEIGHT, HALF } from "@/components/ui/wheel-column";
 
+/** 12시간제 → 24시간제 변환 */
+function to24Hour(period: number, hour12: number): number {
+  if (period === 0) return hour12 === 12 ? 0 : hour12;
+  return hour12 === 12 ? 12 : hour12 + 12;
+}
+
+/** 24시간제 → 12시간제 변환 */
+function to12Hour(hour24: number): { period: number; hour: number } {
+  if (hour24 === 0) return { period: 0, hour: 12 };
+  if (hour24 < 12) return { period: 0, hour: hour24 };
+  if (hour24 === 12) return { period: 1, hour: 12 };
+  return { period: 1, hour: hour24 - 12 };
+}
+
+interface TimeValue {
+  /** 24시간제 (0~23) */
+  hour: number;
+  /** 분 (0~59) */
+  minute: number;
+}
+
 interface TimeWheelPickerProps {
-  value?: { period: number; hour: number; minute: number };
-  onChange?: (time: { period: number; hour: number; minute: number }) => void;
+  value?: TimeValue;
+  onChange?: (time: TimeValue) => void;
   onClose?: () => void;
-  onConfirm?: (time: { period: number; hour: number; minute: number }) => void;
+  onConfirm?: (time: TimeValue) => void;
   /** 분 간격 (기본: 1) */
   minuteStep?: number;
   className?: string;
@@ -26,8 +47,10 @@ const TimeWheelPicker = React.memo(function TimeWheelPicker({
   minuteStep = 1,
   className,
 }: TimeWheelPickerProps) {
-  const [period, setPeriod] = React.useState(value?.period ?? 0);
-  const [hour, setHour] = React.useState(value?.hour ?? 12);
+  // 외부 24시간 값을 내부 12시간제로 변환
+  const init = to12Hour(value?.hour ?? 0);
+  const [period, setPeriod] = React.useState(init.period);
+  const [hour12, setHour12] = React.useState(init.hour);
   const [minute, setMinute] = React.useState(value?.minute ?? 0);
 
   const hours = React.useMemo(
@@ -47,20 +70,27 @@ const TimeWheelPicker = React.memo(function TimeWheelPicker({
     return arr;
   }, [minuteStep]);
 
+  // onChange 안정화
   const onChangeRef = React.useRef(onChange);
   onChangeRef.current = onChange;
 
   React.useEffect(() => {
-    onChangeRef.current?.({ period, hour, minute });
-  }, [period, hour, minute]);
+    onChangeRef.current?.({
+      hour: to24Hour(period, hour12),
+      minute,
+    });
+  }, [period, hour12, minute]);
 
   const handlePeriodChange = React.useCallback((v: number) => setPeriod(v), []);
-  const handleHourChange = React.useCallback((v: number) => setHour(v), []);
+  const handleHourChange = React.useCallback((v: number) => setHour12(v), []);
   const handleMinuteChange = React.useCallback((v: number) => setMinute(v), []);
 
   const handleConfirm = React.useCallback(() => {
-    onConfirm?.({ period, hour, minute });
-  }, [onConfirm, period, hour, minute]);
+    onConfirm?.({
+      hour: to24Hour(period, hour12),
+      minute,
+    });
+  }, [onConfirm, period, hour12, minute]);
 
   return (
     <div
@@ -97,7 +127,7 @@ const TimeWheelPicker = React.memo(function TimeWheelPicker({
           onChange={handlePeriodChange}
           circular={false}
         />
-        <WheelColumn items={hours} value={hour} onChange={handleHourChange} />
+        <WheelColumn items={hours} value={hour12} onChange={handleHourChange} />
         <WheelColumn
           items={minutes}
           value={minute}
@@ -105,7 +135,7 @@ const TimeWheelPicker = React.memo(function TimeWheelPicker({
         />
       </div>
 
-      <div className="flex gap-2 p-3">
+      <div className="flex gap-2 border-t border-border p-3">
         <Button variant="outline" className="flex-1" onClick={onClose}>
           닫기
         </Button>
@@ -118,3 +148,4 @@ const TimeWheelPicker = React.memo(function TimeWheelPicker({
 });
 
 export { TimeWheelPicker };
+export type { TimeValue };
