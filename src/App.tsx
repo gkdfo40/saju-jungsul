@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 
 function App() {
+  const [checked1, setChecked1] = useState(false);
+  const [checked2, setChecked2] = useState(true);
   const [inputValue, setInputValue] = useState("");
   const [selectedDate, setSelectedDate] = useState({ year: 1990, month: 1, day: 2 });
   const [selectedTime, setSelectedTime] = useState({ hour: 0, minute: 0 });
@@ -176,6 +179,35 @@ function App() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* ===== Checkbox ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Checkbox</h2>
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={checked1}
+                onCheckedChange={(v) => setChecked1(v === true)}
+              />
+              <span className="text-sm">미선택 상태 (클릭해 보세요)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <Checkbox
+                checked={checked2}
+                onCheckedChange={(v) => setChecked2(v === true)}
+              />
+              <span className="text-sm">선택된 상태 (클릭해 보세요)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
+              <Checkbox checked={false} disabled />
+              <span className="text-sm">비활성 (미선택)</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-not-allowed opacity-50">
+              <Checkbox checked={true} disabled />
+              <span className="text-sm">비활성 (선택됨)</span>
+            </label>
           </div>
         </section>
 
