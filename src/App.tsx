@@ -175,12 +175,19 @@ function App() {
         {/* ===== Buttons ===== */}
         <section className="w-full space-y-4">
           <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Buttons</h2>
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             <Button>시작하기</Button>
             <Button variant="secondary">더 알아보기</Button>
             <Button variant="outline">설정</Button>
             <Button variant="ghost">Ghost</Button>
             <Button variant="destructive">삭제</Button>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">CTA — violet/white opacity 단계별 (default → hover → pressed)</p>
+            <div className="flex gap-3 items-center rounded-lg bg-navy p-4">
+              <Button variant="cta">운세 보기</Button>
+              <Button variant="cta" size="lg">사주 분석 시작</Button>
+            </div>
           </div>
         </section>
 
