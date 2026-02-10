@@ -184,6 +184,71 @@ function App() {
           </div>
         </section>
 
+        {/* ===== SVG Icons ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">SVG Icons</h2>
+          <div className="flex flex-wrap gap-4">
+            {[
+              "Star 10.svg",
+              "Vector.svg",
+              "common_sparkle_ic.svg",
+              "home_arrow_right_default_ic.svg",
+              "home_arrow_right_pressed_ic.svg",
+              "home_checkbox_default_ic.svg",
+              "home_checkbox_selected_ic.svg",
+              "home_female_default_ic.svg",
+              "home_female_selected_ic.svg",
+              "home_input_delete_ic.svg",
+              "home_logo_ic.svg",
+              "home_male_selected_ic.svg",
+              "home_moon_default_ic.svg",
+              "home_sun_default_ic.svg",
+              "home_sun_moon_ic.svg",
+              "home_sun_selected_ic.svg",
+              "home_yoon_default_ic.svg",
+              "home_yoon_selected_ic.svg",
+            ].map((file) => (
+              <div key={file} className="flex flex-col items-center gap-2">
+                <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-border bg-white p-2">
+                  <img
+                    src={`/images/${file}`}
+                    alt={file}
+                    className="max-h-full max-w-full object-contain"
+                  />
+                </div>
+                <span className="max-w-20 truncate text-[10px] text-muted-foreground" title={file}>
+                  {file.replace('.svg', '')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ===== Background Images (AVIF) ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Background Images</h2>
+          <div className="flex flex-wrap gap-4">
+            {[
+              "home_bg_img.avif",
+              "body_bg_img 1.avif",
+              "cover_bg_img 1.avif",
+            ].map((file) => (
+              <div key={file} className="flex flex-col items-center gap-2">
+                <div className="h-32 w-48 overflow-hidden rounded-lg border border-border">
+                  <img
+                    src={`/images/${file}`}
+                    alt={file}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  {file.replace('.avif', '')}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
       </div>
     </div>
   );
