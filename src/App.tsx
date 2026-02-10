@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
+import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 
 function App() {
   const [inputValue, setInputValue] = useState("");
   const [selectedDate, setSelectedDate] = useState({ year: 1990, month: 1, day: 2 });
+  const [selectedTime, setSelectedTime] = useState({ period: 0, hour: 12, minute: 0 });
   return (
     <div className="flex min-h-svh items-center justify-center py-16">
       <div className="flex flex-col items-start gap-8 max-w-3xl w-full px-8">
@@ -250,6 +252,30 @@ function App() {
               <p className="text-xs text-muted-foreground">선택된 날짜</p>
               <p className="text-lg font-bold">
                 {selectedDate.year}년 {selectedDate.month}월 {selectedDate.day}일
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== TimeWheelPicker ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Time Wheel Picker</h2>
+          <div className="flex gap-6 items-start">
+            <TimeWheelPicker
+              value={selectedTime}
+              onChange={setSelectedTime}
+              onClose={() => alert("닫기")}
+              onConfirm={(time) =>
+                alert(
+                  `선택: ${time.period === 0 ? "오전" : "오후"} ${time.hour}시 ${String(time.minute).padStart(2, "0")}분`
+                )
+              }
+            />
+            <div className="space-y-1 pt-2">
+              <p className="text-xs text-muted-foreground">선택된 시간</p>
+              <p className="text-lg font-bold">
+                {selectedTime.period === 0 ? "오전" : "오후"} {selectedTime.hour}시{" "}
+                {String(selectedTime.minute).padStart(2, "0")}분
               </p>
             </div>
           </div>
