@@ -1,6 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { DateWheelPicker } from "@/components/ui/date-wheel-picker";
 
 function App() {
+  const [inputValue, setInputValue] = useState("");
+  const [selectedDate, setSelectedDate] = useState({ year: 1990, month: 1, day: 2 });
   return (
     <div className="flex min-h-svh items-center justify-center py-16">
       <div className="flex flex-col items-start gap-8 max-w-3xl w-full px-8">
@@ -187,6 +192,65 @@ function App() {
             <div className="flex gap-3 items-center rounded-lg bg-navy p-4">
               <Button variant="cta">운세 보기</Button>
               <Button variant="cta" size="lg">사주 분석 시작</Button>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== Input ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Input</h2>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">variant="default" (shadcn 기본)</p>
+            <div className="flex gap-3">
+              <Input placeholder="기본 입력" />
+              <Input defaultValue="입력된 값" />
+              <Input disabled placeholder="비활성화" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">variant="glass" (글래스모피즘)</p>
+            <div className="flex flex-col gap-4 rounded-lg bg-navy p-6">
+              <div className="space-y-1">
+                <p className="text-[10px] text-white/40">placeholder (입력 전)</p>
+                <Input variant="glass" placeholder="텍스트 입력 전" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-white/40">controlled (입력 중 / 클리어 가능)</p>
+                <Input
+                  variant="glass"
+                  placeholder="이름을 입력하세요"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onClear={() => setInputValue("")}
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] text-white/40">filled (입력 후)</p>
+                <Input variant="glass" defaultValue="입력 후" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ===== DateWheelPicker ===== */}
+        <section className="w-full space-y-4">
+          <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-2">Date Wheel Picker</h2>
+          <div className="flex gap-6 items-start">
+            <DateWheelPicker
+              value={selectedDate}
+              onChange={setSelectedDate}
+              onClose={() => alert("닫기")}
+              onConfirm={(date) =>
+                alert(`선택: ${date.year}년 ${date.month}월 ${date.day}일`)
+              }
+            />
+            <div className="space-y-1 pt-2">
+              <p className="text-xs text-muted-foreground">선택된 날짜</p>
+              <p className="text-lg font-bold">
+                {selectedDate.year}년 {selectedDate.month}월 {selectedDate.day}일
+              </p>
             </div>
           </div>
         </section>
