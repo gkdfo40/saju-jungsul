@@ -23,30 +23,71 @@ export const reportStyles = StyleSheet.create({
   },
 
   content: {
-    paddingTop: 48,
-    paddingBottom: 72,
-    paddingHorizontal: 40,
+    paddingHorizontal: 30,
+    paddingVertical: 30,
   },
 
-  // Typography (프로젝트 CSS 토큰을 PDF에 직접 쓸 수 없으므로 근사값 사용)
-  displayTitle: {
-    fontSize: 28,
-    fontWeight: 700,
+  // Typography tokens (page-description.md 기반)
+  display1: {
+    fontSize: 50,
+    lineHeight: 70,
+    fontWeight: 400,
     textAlign: "center",
-    letterSpacing: 0.2,
   },
-  heading: {
-    fontSize: 20,
-    fontWeight: 700,
-    color: "#2B3933",
-    marginBottom: 12,
+  display2: {
+    fontSize: 40,
+    lineHeight: 56,
+    fontWeight: 400,
+    textAlign: "center",
+    marginBottom: 8,
   },
-  subHeading: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#465D51",
-    marginTop: 10,
-    marginBottom: 6,
+  heading0: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: 900,
+  },
+  heading1: {
+    fontSize: 24,
+    lineHeight: 34,
+    fontWeight: 900,
+  },
+  heading2: {
+    fontSize: 22,
+    lineHeight: 31,
+    fontWeight: 900,
+  },
+  title0: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: 900,
+  },
+  title1: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: 900,
+  },
+  title2: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: 900,
+  },
+  body1: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: 900,
+    color: "#34302C",
+  },
+  body2: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: 400,
+    color: "#34302C",
+  },
+  label1: {
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: 400,
+    color: "#34302C",
   },
   body: {
     fontSize: 12,
@@ -122,4 +163,3 @@ export const reportStyles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
