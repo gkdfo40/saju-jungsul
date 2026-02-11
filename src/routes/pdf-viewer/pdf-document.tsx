@@ -21,10 +21,6 @@ Font.register({
 const COVER_BG = "/images/cover_bg_img 1.png";
 const BODY_BG = "/images/body_bg_img 1.png";
 
-/* ── A4 크기 (pt) ─────────────────────────────────── */
-const A4_WIDTH = 595.28;
-const A4_HEIGHT = 841.89;
-
 /* ── 챕터 데이터 ───────────────────────────────── */
 const chapters = [
   {

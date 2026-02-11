@@ -1,0 +1,113 @@
+---
+alwaysApply: true
+---
+
+# Cursor Rules (React + TypeScript + Vite + Tailwind + shadcn-ui + Radix)
+
+## Tech Stack
+- React + TypeScript + Vite
+- Tailwind CSS
+- shadcn-ui
+- Radix UI
+- Forms: **react-hook-form + zod** (required)
+
+---
+
+## Required Folder Structure
+- `src/routes` : pages (route-level components)
+- `src/service` : API / repository layer (fetch/axios, request functions)
+- `src/types` : global/shared types
+- `src/components` : reusable components (UI + domain components)
+- `src/lib` : utilities/helpers/constants/config
+
+> When adding new files, place them in this structure first. Do not create random/temporary folders.
+
+---
+
+## Naming Conventions
+- Components / Pages: `PascalCase.tsx`
+- Hooks: `useSomething.ts`
+- Utilities: `camelCase.ts`
+- Types / Interfaces: `PascalCase`
+- Route files: `kebab-case.tsx` **or** folder-based routes (follow the project’s chosen convention consistently)
+
+---
+
+## Import Rules
+- Prefer path aliases (e.g. `@/components`, `@/lib`) to avoid deep relative paths.
+- Import order:
+  1) External libraries
+  2) Internal alias imports
+  3) Relative imports
+  4) Styles / side-effect imports
+
+---
+
+## UI Rules (shadcn-ui / Radix)
+- Use **shadcn-ui components first** for base UI.
+- If using Radix primitives directly, follow shadcn patterns for styling/structure consistency.
+- Keep Tailwind class duplication low; extract repeated styles into components/variants.
+- Accessibility:
+  - Use recommended Radix/shadcn patterns for `Dialog`, `DropdownMenu`, `Popover`, `Tabs`, etc.
+  - Do not ship interactive elements without proper labels/aria attributes.
+
+---
+
+## Form Rules (STRICT)
+### Must
+- All forms must be implemented with **react-hook-form + zod**.
+- Keep the zod schema outside the component (or in `src/types`, `src/lib`, or a domain module).
+- zod is the single source of truth for validation. No ad-hoc UI validation logic.
+
+### Required Pattern
+- Use `zodResolver(schema)`
+- Manage initial values via `defaultValues`
+- Render errors via shadcn `FormMessage` (or an equivalent consistent pattern)
+
+### Don’t
+- Don’t manage form values with arbitrary local state (use `Controller` only when needed).
+- Don’t re-run `zod.parse` inside submit handlers (avoid duplicate validation unless truly necessary).
+
+---
+
+## API / Service Rules
+- All network calls must go through `src/service` (no direct `fetch/axios` in route components).
+- `service` responsibilities:
+  - request/response typing
+  - endpoint calls
+  - consistent error shaping (when possible)
+- UI mapping/formatting belongs in `routes` or domain logic—not in `service`.
+
+---
+
+## Types Rules
+- Shared types go in `src/types`.
+- Feature/domain-specific types can live near the feature initially, but move to `src/types` once reused.
+- No `any`. If unavoidable, use `unknown` + type guards.
+
+---
+
+## State & Side Effects
+- Keep UI state local when possible.
+- Minimize `useEffect`; prefer event-driven logic.
+- If using a data library (e.g. TanStack Query), enforce a single consistent pattern across the app.
+
+---
+
+## Code Style
+- Keep components readable:
+  - Consider splitting components once they exceed ~150–200 lines.
+  - Extract complex conditions into variables/helpers.
+- Always handle loading/error/empty states explicitly.
+
+---
+
+## Cursor Deliverables
+When creating a new feature/page:
+1) Route component → `src/routes`
+2) API calls/repositories → `src/service`
+3) Reusable UI → `src/components`
+4) Utilities/constants → `src/lib`
+5) Types → `src/types` (or feature-local until reused)
+
+If there is a form, it must follow the **react-hook-form + zod** pattern.
