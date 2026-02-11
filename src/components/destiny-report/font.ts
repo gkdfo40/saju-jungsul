@@ -16,7 +16,4 @@ export function ensureDestinyReportFonts() {
     src: "/fonts/GowunDodum-Regular.woff",
     fontWeight: 400,
   });
-
-  // 굵기(700)용 폰트가 별도로 있다면 여기서 추가 등록하면 된다.
 }
-
