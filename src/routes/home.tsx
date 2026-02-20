@@ -22,9 +22,9 @@ export default function HomePage() {
       style={{ backgroundImage: "url(/images/home_bg_img.avif)" }}
     >
       <div className="min-h-svh overflow-auto flex justify-center px-4 py-8 font-primary">
-        <div className="w-[335px] flex flex-col gap-6">
+        <div className="w-[335px] flex flex-col gap-3  break-keep">
           {/* header-area */}
-          <header className="flex flex-col gap-2 text-center break-keep">
+          <header className="flex flex-col gap-2 text-center">
             <h1
               className="text-white"
               style={{
@@ -48,8 +48,8 @@ export default function HomePage() {
           </header>
 
           {/* main-area: 배경 navy/60%, 테두리 border-image 그라데이션 #A97F00 → #433200 */}
-          <main className="mt-10 h-[2000px] outline -outline-offset-1 outline-yellow-700 backdrop-blur-[1px]  rounded-2xl bg-navy/60 py-10 px-4 border-2 border-solid border-transparent">
-            <form className="flex flex-col">
+          <main className="mt-10 outline -outline-offset-1 outline-yellow-700 backdrop-blur-[1px]  rounded-2xl bg-navy/60 py-10 px-4 border-2 border-solid border-transparent">
+            <form className="flex flex-col gap-10">
               <Button variant="cta" type="submit" className="flex h-13">
                 제출하기
                 <ArrowRight />
